@@ -1,0 +1,21 @@
+python mk_3/train_subset.py --root data/RHD_v1-1 --sample-id 00010 --batch-size 1 --epochs 200
+
+python mk_3/train_subset.py --root data/RHD_v1-1 --subset-size 16 --log-interval 1 --csv-path mk_3/train_subset_metrics.csv --batch-size 1
+
+python mk_3/train_subset.py --root data/RHD_v1-1 --subset-size 16 --epochs 5 --csv-path mk_3/train_subset_coords.csv
+
+
+python mk_3/train_subset.py --root data/RHD_v1-1 --subset-size 16 --epochs 5 --csv-path mk_3/train_subset_coords.csv --csv-mean-path mk_3/train_subset_mean.csv
+
+python mk_3/plots/plot_mean_error.py --csv mk_3/train_subset_mean.csv
+
+
+python mk_3/train_subset.py --root data/RHD_v1-1  --epochs 5 --csv-path mk_3/train_subset_coords.csv --csv-mean-path mk_3/train_subset_mean.csv
+
+python mk_3/visualize.py --ckpt mk_3/checkpoints_subset/epoch_4.pt --root data/RHD_v1-1
+
+python mk_3/visualize.py --ckpt mk_3/checkpoints_subset/epoch_4.pt --root data/RHD_v1-1 --split training --index 100
+
+python mk_3/train_subset.py --root data/RHD_v1-1 --epochs 500 --csv-path mk_3/train_subset_coords.csv --csv-mean-path mk_3/train_subset_mean.csv
+
+python mk_3/plots/plot_mean_error.py --csv mk_3/train_subset_mean.csv
