@@ -19,3 +19,54 @@ python mk_3/visualize.py --ckpt mk_3/checkpoints_subset/epoch_4.pt --root data/R
 python mk_3/train_subset.py --root data/RHD_v1-1 --epochs 500 --csv-path mk_3/train_subset_coords.csv --csv-mean-path mk_3/train_subset_mean.csv
 
 python mk_3/plots/plot_mean_error.py --csv mk_3/train_subset_mean.csv
+
+python handpose/scripts/train.py
+
+
+python -c "import torch; print(torch.cuda.is_available()); print(torch.cuda.device_count())"
+
+
+sacct -j 7402442 --format=JobID,State,ExitCode,MaxRSS,Elapsed
+
+#SBATCH --mem=32G
+#SBATCH --gres=gpu:1
+
+scontrol show job 7402442
+
+sacct -u 40321491 --format=JobID,State,ExitCode
+
+squeue -u 40321491
+
+watch -n 5 squeue -u 40321491
+
+scancel <JOB_ID>
+
+sacct -j 7409656 --format=JobID,State,ExitCode,Elapsed
+
+python -u handpose/train.py
+
+scontrol show job 7409681 | grep -E "Partition|NodeList|Gres|TRES"
+
+srun -p k2-gpu-a100mig -N 1 -n 1 --gres=gpu:2g.20gb:1 --mem=8G --time=00:10:00 --pty bash
+
+srun -p k2-gpu-a100mig -N 1 -n 1 --gres=gpu:2g.20gb:1 --mem=8G --time=00:10:00 --pty bash
+
+srun -p k2-gpu-interactive -N 1 -n 1 --gres=gpu:2g.20gb:1 --mem=8G --time=00:10:00 --pty bash
+
+conda install pytorch pytorch-cuda=11.8 -c pytorch -c nvidia
+
+python -c "import torch"
+
+https://mct-master.github.io/machine-learning/2023/04/25/olivegr-pytorch-gpu.html
+
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+
+python plot_losses.py --job-id 7414471
+
+sstat -j 7415498 --format=JobID,MaxRSS,AveRSS,AveCPU,MaxVMSize,Elapsed
+sstat -j 7415498.batch --format=JobID,MaxRSS,AveRSS,AveCPU,MaxVMSize
+
+ssh <node>
+htop
+nvidia-smi
+
