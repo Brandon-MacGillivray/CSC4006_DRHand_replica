@@ -55,3 +55,38 @@ class HeatmapCoordLoss(nn.Module):
             beta=self.beta,
             normalize=self.normalize,
         )
+
+class WingLoss(nn.Module):
+    def __init__(self, w=10.0, epsilon=2.0):
+        super().__init__()
+        self.w = w
+        self.epsilon = epsilon
+        # constant so curve is continuous
+        self.C = w - w * torch.log(torch.tensor(1 + w / epsilon))
+
+    def forward(self, pred, target, vis=None):
+        # pred, target: (N, 21, 2)
+        # vis: (N, 21) optional
+
+        diff = pred - target
+        abs_diff = diff.abs()
+
+        w = self.w
+        eps = self.epsilon
+        C = self.C.to(pred.device)
+
+        # two regions
+        small = w * torch.log(1 + abs_diff / eps)
+        large = abs_diff - C
+
+        loss = torch.where(abs_diff < w, small, large)
+
+        # apply visibility mask if given
+        if vis is not None:
+            vis = vis.float().unsqueeze(-1)  # (N,21,1)
+            loss = loss * vis
+            denom = vis.sum() * 2.0 + 1e-6   # x and y
+        else:
+            denom = loss.numel()
+
+        return loss.sum() / denom

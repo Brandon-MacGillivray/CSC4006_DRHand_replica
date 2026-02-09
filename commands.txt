@@ -70,3 +70,6 @@ ssh <node>
 htop
 nvidia-smi
 
+python plot_losses.py --job-id 7417371
+
+python train.py --job-id

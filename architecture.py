@@ -169,21 +169,43 @@ class Heatmap_reg(nn.Module):
 
         self.convM = Conv2D(48, 21, 1, 1, 0)
 
-    @staticmethod
-    def heatmap_to_coords_argmax(hm):
-        # hm: (N, J, H, W)
-        n, j, h, w = hm.shape
-        flat = hm.reshape(n, j, -1)
-        idx = flat.argmax(dim=-1)
-        y = (idx // w).float()
-        x = (idx % w).float()
-        return torch.stack([x, y], dim=-1)
-
-    def forward(self, x, return_coords=False):
+    def forward(self, x, return_feat_64=False):
         x = self.deconvM1(x)
         x = self.deconvM2(x)
-        x = self.deconvM3(x)
-        x = self.convM(x)
-        if return_coords:
-            return x, self.heatmap_to_coords_argmax(x)
+        feat_64 = self.deconvM3(x)
+        x = self.convM(feat_64)
+
+        if return_feat_64:
+            return x, feat_64
+        return x
+
+class coord_reg(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.dsconv1 = DSConv2D(48, 96, 3, 1, 1)
+        self.dsconv2 = DSConv2D(96, 96, 3, 1, 1)
+        self.dsconv3 = DSConv2D(96, 96, 3, 1, 1)
+        self.dsconv4 = DSConv2D(96, 96, 3, 1, 1)
+        self.dsconv5 = DSConv2D(96, 96, 3, 1, 1)
+        self.dsconv6 = DSConv2D(96, 42, 2, 2, 0)
+
+        self.mp = MaxPool(2,2)
+
+    def forward(self, x):
+        x = self.dsconv1(x)
+        x = self.mp(x)
+        x = self.dsconv2(x)
+        x = self.mp(x)
+        x = self.dsconv3(x)
+        x = self.mp(x)
+        x = self.dsconv4(x)
+        x = self.mp(x)
+        x = self.dsconv5(x)
+        x = self.mp(x)
+        x = self.dsconv6(x)
+        
+        # (1x1x42) -> (1x21x2)
+        x = x.view(x.size(0), 21, 2)
+
         return x
