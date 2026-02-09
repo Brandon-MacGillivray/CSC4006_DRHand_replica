@@ -9,7 +9,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Subset
 
 from dataset import RHDDatasetCoords  
-from losses import HeatmapCoordLoss, WingLoss  
+from losses import HeatmapCoordLoss, WingLoss, HeatmapMSELoss
 from architecture import Backbone, Heatmap_reg, coord_reg  
 from utils import save_checkpoint, EarlyStopper 
 
@@ -221,7 +221,8 @@ def main():
         train_ds = Subset(train_ds, range(N))
 
     model = HandPoseNet().to(device)
-    hm_loss_fn = HeatmapCoordLoss(beta=args.beta, normalize=True)
+    #hm_loss_fn = HeatmapCoordLoss(beta=args.beta, normalize=True)
+    hm_loss_fn = HeatmapMSELoss()
     coord_loss_fn = WingLoss(w=10.0, epsilon=2.0)
 
     # STAGE 1: heatmap only

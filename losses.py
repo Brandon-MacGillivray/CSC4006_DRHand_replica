@@ -90,3 +90,36 @@ class WingLoss(nn.Module):
             denom = loss.numel()
 
         return loss.sum() / denom
+
+def coords_to_heatmaps(coords, vis, H=64, W=64, sigma=2.0):
+    """
+    coords: (N,J,2) in [0,1] normalized
+    vis:    (N,J) boolean
+    returns (N,J,H,W)
+    """
+    N, J, _ = coords.shape
+    device = coords.device
+    yy = torch.arange(H, device=device).view(1, 1, H, 1).float()
+    xx = torch.arange(W, device=device).view(1, 1, 1, W).float()
+
+    x = coords[..., 0].clamp(0, 1) * (W - 1)
+    y = coords[..., 1].clamp(0, 1) * (H - 1)
+    x = x.view(N, J, 1, 1)
+    y = y.view(N, J, 1, 1)
+
+    g = torch.exp(-((xx - x) ** 2 + (yy - y) ** 2) / (2 * sigma ** 2))
+
+    if vis is not None:
+        g = g * vis.float().view(N, J, 1, 1)
+
+    return g
+
+class HeatmapMSELoss(nn.Module):
+    def __init__(self, H=64, W=64, sigma=2.0):
+        super().__init__()
+        self.H, self.W, self.sigma = H, W, sigma
+        self.mse = nn.MSELoss(reduction="mean")
+
+    def forward(self, pred_heatmaps, target_coords, vis):
+        gt = coords_to_heatmaps(target_coords, vis, H=self.H, W=self.W, sigma=self.sigma)
+        return self.mse(pred_heatmaps, gt)
