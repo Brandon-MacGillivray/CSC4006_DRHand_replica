@@ -9,7 +9,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Subset
 
 from dataset import RHDDatasetCoords  
-from losses import HeatmapCoordLoss, WingLoss, HeatmapMSELoss
+from losses import WingLoss, HeatmapMSELoss
 from architecture import Backbone, Heatmap_reg, coord_reg  
 from utils import save_checkpoint, EarlyStopper 
 
@@ -74,20 +74,19 @@ def train_one_epoch(
 
     optim.zero_grad(set_to_none=True)
 
-    for step, (imgs, coords, vis) in enumerate(loader):
+    for step, (imgs, coords) in enumerate(loader):
         imgs = imgs.to(device, non_blocking=True)
         coords = coords.to(device, non_blocking=True)
-        vis = vis.to(device, non_blocking=True)
 
         if stage == 1:
             pred_heatmaps = model.forward_heatmap(imgs)
-            loss = loss_hm_fn(pred_heatmaps, coords, vis)
+            loss = loss_hm_fn(pred_heatmaps, coords)
         else:
             pred_heatmaps, pred_coords = model(imgs)
-            loss_hm = loss_hm_fn(pred_heatmaps, coords, vis)
+            loss_hm = loss_hm_fn(pred_heatmaps, coords)
             if loss_coord_fn is None:
                 raise ValueError("stage 2 requires loss_coord_fn")
-            loss_coord = loss_coord_fn(pred_coords, coords, vis)
+            loss_coord = loss_coord_fn(pred_coords, coords)
             loss = lambda_hm * loss_hm + lambda_coord * loss_coord
 
         loss = loss / accum_steps
@@ -121,20 +120,19 @@ def validate(
     model.eval()
     total = 0.0
 
-    for imgs, coords, vis in loader:
+    for imgs, coords in loader:
         imgs = imgs.to(device, non_blocking=True)
         coords = coords.to(device, non_blocking=True)
-        vis = vis.to(device, non_blocking=True)
 
         if stage == 1:
             pred_heatmaps = model.forward_heatmap(imgs)
-            loss = loss_hm_fn(pred_heatmaps, coords, vis)
+            loss = loss_hm_fn(pred_heatmaps, coords)
         else:
             pred_heatmaps, pred_coords = model(imgs)
-            loss_hm = loss_hm_fn(pred_heatmaps, coords, vis)
+            loss_hm = loss_hm_fn(pred_heatmaps, coords)
             if loss_coord_fn is None:
                 raise ValueError("stage 2 requires loss_coord_fn")
-            loss_coord = loss_coord_fn(pred_coords, coords, vis)
+            loss_coord = loss_coord_fn(pred_coords, coords)
             loss = lambda_hm * loss_hm + lambda_coord * loss_coord
 
         total += float(loss.item())
@@ -221,7 +219,6 @@ def main():
         train_ds = Subset(train_ds, range(N))
 
     model = HandPoseNet().to(device)
-    #hm_loss_fn = HeatmapCoordLoss(beta=args.beta, normalize=True)
     hm_loss_fn = HeatmapMSELoss()
     coord_loss_fn = WingLoss(w=10.0, epsilon=2.0)
 

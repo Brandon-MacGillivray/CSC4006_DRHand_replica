@@ -24,17 +24,17 @@ class RHDDatasetCoords(Dataset):
     def __len__(self):
         return len(self.ids)
 
-    def _select_hand(self, uv_vis):
+    def _select_hand(self, uv_data):
         if self.hand == "left":
-            return uv_vis[0:21]
+            return uv_data[0:21]
         if self.hand == "right":
-            return uv_vis[21:42]
+            return uv_data[21:42]
         if self.hand == "auto":
-            left = uv_vis[0:21]
-            right = uv_vis[21:42]
-            left_vis = (left[:, 2] == 1).sum()
-            right_vis = (right[:, 2] == 1).sum()
-            return right if right_vis >= left_vis else left
+            left = uv_data[0:21]
+            right = uv_data[21:42]
+            left_score = left[:, 2].sum()
+            right_score = right[:, 2].sum()
+            return right if right_score >= left_score else left
         raise ValueError("hand must be one of: 'left', 'right', 'auto'")
 
     def __getitem__(self, idx):
@@ -46,10 +46,10 @@ class RHDDatasetCoords(Dataset):
         img = img.resize((self.input_size, self.input_size))
         img = torch.from_numpy(np.array(img)).permute(2, 0, 1).float() / 255.0
 
-        uv_vis = anno["uv_vis"]  # (42, 3)
-        hand = self._select_hand(uv_vis)
+        uv_key = next(k for k in anno.keys() if str(k).lower().startswith("uv"))
+        uv_data = anno[uv_key]  # expected shape (42, 3)
+        hand = self._select_hand(uv_data)
         coords = hand[:, :2]  # (21, 2) in 320x320 pixels
-        vis = hand[:, 2] == 1  # (21,)
 
         scale = self.input_size / 320.0
         coords = coords * scale
@@ -57,6 +57,5 @@ class RHDDatasetCoords(Dataset):
             coords = coords / self.input_size
 
         coords = torch.tensor(coords, dtype=torch.float32)
-        vis = torch.tensor(vis, dtype=torch.bool)
 
-        return img, coords, vis
+        return img, coords
