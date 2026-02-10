@@ -73,3 +73,5 @@ nvidia-smi
 python plot_losses.py --job-id 7417371
 
 python train.py --job-id
+
+python handpose/rhd_palm_to_file.py --rhd_root /data/RHD --split training --num 100 --out_dir palm_results

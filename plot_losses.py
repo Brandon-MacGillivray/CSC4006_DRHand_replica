@@ -6,14 +6,36 @@ import matplotlib.pyplot as plt
 
 
 def read_losses(csv_path):
-    epochs, train_losses, val_losses = [], [], []
+    stage, epochs, train_losses, val_losses = [], [], [], []
     with open(csv_path, "r", newline="") as f:
         r = csv.DictReader(f)
         for row in r:
+            stage.append(int(row["stage"]))
             epochs.append(int(row["epoch"]))
             train_losses.append(float(row["train_loss"]))
             val_losses.append(float(row["val_loss"]))
-    return epochs, train_losses, val_losses
+    return stage, epochs, train_losses, val_losses
+
+
+def offset_epochs(stages, epochs):
+    """
+    Make stage-2 epochs continue after stage-1 epochs.
+    If stage 1 ends at epoch e_max (0-indexed), stage-2 epoch 0 becomes e_max+1.
+    """
+    # find stage-1 max epoch (if no stage-1 rows, no offset)
+    stage1_epochs = [e for s, e in zip(stages, epochs) if s == 1]
+    if not stage1_epochs:
+        return epochs
+
+    offset = max(stage1_epochs) + 1
+
+    adjusted = []
+    for s, e in zip(stages, epochs):
+        if s == 2:
+            adjusted.append(e + offset)
+        else:
+            adjusted.append(e)
+    return adjusted
 
 
 def main():
@@ -31,11 +53,12 @@ def main():
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"Missing {csv_path}")
 
-    epochs, train_losses, val_losses = read_losses(csv_path)
+    stages, epochs, train_losses, val_losses = read_losses(csv_path)
+    plot_epochs = offset_epochs(stages, epochs)
 
     plt.figure()
-    plt.plot(epochs, train_losses, label="train")
-    plt.plot(epochs, val_losses, label="val")
+    plt.plot(plot_epochs, train_losses, label="train")
+    plt.plot(plot_epochs, val_losses, label="val")
     plt.xlabel("epoch")
     plt.ylabel("loss")
     plt.title(f"Loss curves (job {args.job_id})")
