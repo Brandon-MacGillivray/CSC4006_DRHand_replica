@@ -3,27 +3,27 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-def soft_argmax_2d(heatmaps, beta=100.0, normalize=True):
-    """
-    heatmaps: (N, J, H, W)
-    returns coords: (N, J, 2) as (x, y)
-    """
-    n, j, h, w = heatmaps.shape
-    flat = heatmaps.view(n, j, -1)
-    prob = F.softmax(flat * beta, dim=-1).view(n, j, h, w)
+# def soft_argmax_2d(heatmaps, beta=100.0, normalize=True):
+#     """
+#     heatmaps: (N, J, H, W)
+#     returns coords: (N, J, 2) as (x, y)
+#     """
+#     n, j, h, w = heatmaps.shape
+#     flat = heatmaps.view(n, j, -1)
+#     prob = F.softmax(flat * beta, dim=-1).view(n, j, h, w)
 
-    ys = torch.linspace(0, h - 1, h, device=heatmaps.device)
-    xs = torch.linspace(0, w - 1, w, device=heatmaps.device)
-    yy, xx = torch.meshgrid(ys, xs, indexing="ij")
+#     ys = torch.linspace(0, h - 1, h, device=heatmaps.device)
+#     xs = torch.linspace(0, w - 1, w, device=heatmaps.device)
+#     yy, xx = torch.meshgrid(ys, xs, indexing="ij")
 
-    x = (prob * xx).sum(dim=(-2, -1))
-    y = (prob * yy).sum(dim=(-2, -1))
+#     x = (prob * xx).sum(dim=(-2, -1))
+#     y = (prob * yy).sum(dim=(-2, -1))
 
-    if normalize:
-        x = x / (w - 1)
-        y = y / (h - 1)
+#     if normalize:
+#         x = x / (w - 1)
+#         y = y / (h - 1)
 
-    return torch.stack([x, y], dim=-1)
+#     return torch.stack([x, y], dim=-1)
 
 
 def coords_to_heatmaps(coords, H=64, W=64, sigma=2.0):

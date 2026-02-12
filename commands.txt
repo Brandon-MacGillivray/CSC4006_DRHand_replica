@@ -75,3 +75,27 @@ python plot_losses.py --job-id 7417371
 python train.py --job-id
 
 python handpose/rhd_palm_to_file.py --rhd_root /data/RHD --split training --num 100 --out_dir palm_results
+
+
+---
+
+seperste stages in the plot generation
+how to reduce 21 lm to 10? 
+    how to select only 10 specific lm from input data?
+need to run model with all training data -> how to infer? val loss plot
+    seperate program for just val
+    how to test with other datasets?
+    need general purpose input processing
+    such that input (x,y,3) -> (256,256,3)
+    how to deal with multiple hands per image?
+    need detector -> cropped resized image of hand -> not focus 
+
+what part of the training loop would have to change to use 10 instead of 21?
+    in dataset, retrieve each data item
+    based on coords
+    for each image, 2 hands
+    coords rep in array [0,41]
+    identify correct index landmark mapping, -> specify this during loading
+    if getitem returns only (21,2) what is effected?
+        I don't think it will
+
